@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Caprae LeadGen</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            margin: 0;
+            background: #ecf0f1;
+            color: #2c3e50;
+        }
+        header {
+            background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+            color: white;
+            padding: 15px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        nav a {
+            color: #ecf0f1;
+            margin: 0 20px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.3s;
+        }
+        nav a:hover {
+            color: #f1c40f;
+        }
+        main {
+            padding: 20px;
+            max-width: 900px;
+            margin: auto;
+        }
+        form {
+            margin: 20px 0;
+            padding: 15px;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        input, button, select {
+            padding: 10px;
+            margin: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        button {
+            background: #3498db;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background: #2980b9;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            background: #fff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background: #2c3e50;
+            color: white;
+        }
+        tr:hover {
+            background: #f8f9fa;
+        }
+        a {
+            color: #3498db;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        a:hover {
+            color: #2980b9;
+        }
+        .lead-detail, .form-section {
+            margin: 20px 0;
+            padding: 15px;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .error {
+            color: #e74c3c;
+            text-align: center;
+            margin: 10px 0;
+            font-weight: 500;
+        }
+        .pagination {
+            margin-top: 20px;
+            text-align: center;
+        }
+        .pagination a {
+            margin: 0 5px;
+            padding: 8px 12px;
+            color: #2c3e50;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            transition: background 0.3s;
+        }
+        .pagination a:hover {
+            background: #3498db;
+            color: white;
+        }
+        .pagination a.active {
+            background: #2980b9;
+            color: white;
+            border-color: #2980b9;
+        }
+        @media (max-width: 600px) {
+            form, table, .lead-detail {
+                font-size: 14px;
+            }
+            input, button, select {
+                width: 100%;
+                margin: 5px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Caprae LeadGen</h1>
+        <nav>
+            <a href="/">Home</a>
+            <a href="/export{% if industry %}?industry={{ industry }}{% endif %}{% if min_revenue %}&min_revenue={{ min_revenue }}{% endif %}{% if search %}&search={{ search }}{% endif %}">Export Leads</a>
+        </nav>
+    </header>
+    <main>
+        {% if error %}
+            <p class="error">{{ error }}</p>
+        {% endif %}
+        {% if lead %}
+            <!-- Lead Detail/Edit View -->
+            <div class="lead-detail">
+                <h2>{{ 'Edit Lead' if edit_mode else lead[1] }}</h2>
+                {% if edit_mode %}
+                    <form method="post" action="/?action=edit&lead_id={{ lead[0] }}">
+                        <input type="text" name="company_name" value="{{ lead[1] }}" required>
+                        <input type="text" name="website" value="{{ lead[2] }}">
+                        <input type="email" name="contact_email" value="{{ lead[3] }}">
+                        <input type="text" name="industry" value="{{ lead[4] }}" required>
+                        <input type="number" name="revenue" value="{{ lead[5] | float }}" required>
+                        <button type="submit">Update</button>
+                        <a href="/?lead_id={{ lead[0] }}">Cancel</a>
+                    </form>
+                {% else %}
+                    <p><strong>Website:</strong> <a href="{{ lead[2] }}">{{ lead[2] }}</a></p>
+                    <p><strong>Email:</strong> {{ lead[3] }}</p>
+                    <p><strong>Industry:</strong> {{ lead[4] }}</p>
+                    <p><strong>Revenue:</strong> ${{ lead[5] | float }}</p>
+                    <p><strong>Score:</strong> {{ lead[6] }}/5</p>
+                    <p><strong>Created:</strong> {{ lead[7] }}</p>
+                    <a href="/">Back</a>
+                    <a href="/?action=edit&lead_id={{ lead[0] }}">Edit</a>
+                    <a href="/?action=delete&lead_id={{ lead[0] }}" onclick="return confirm('Delete this lead?')">Delete</a>
+                {% endif %}
+            </div>
+        {% else %}
+            <!-- Lead List View -->
+            <h2>Leads</h2>
+            <!-- Filter/Search/Sort Form -->
+            <div class="form-section">
+                <h3>Filter & Search Leads</h3>
+                <form method="get">
+                    <input type="text" name="search" placeholder="Company Name" value="{{ search or '' }}">
+                    <input type="text" name="industry" placeholder="Industry" value="{{ industry or '' }}">
+                    <input type="number" name="min_revenue" placeholder="Min Revenue ($)" value="{{ min_revenue or '' }}">
+                    <select name="sort_by">
+                        <option value="company_name" {% if sort_by == 'company_name' %}selected{% endif %}>Sort by Name</option>
+                        <option value="revenue" {% if sort_by == 'revenue' %}selected{% endif %}>Sort by Revenue</option>
+                        <option value="score" {% if sort_by == 'score' %}selected{% endif %}>Sort by Score</option>
+                    </select>
+                    <button type="submit">Filter</button>
+                </form>
+            </div>
+            <!-- Add New Company Form -->
+            <div class="form-section">
+                <h3>Add New Company</h3>
+                <form method="post" action="/?action=add">
+                    <input type="text" name="company_name" placeholder="Company Name" required>
+                    <input type="text" name="website" placeholder="Website">
+                    <input type="email" name="contact_email" placeholder="Email">
+                    <input type="text" name="industry" placeholder="Industry" required>
+                    <input type="number" name="revenue" placeholder="Revenue ($)" required>
+                    <button type="submit">Add</button>
+                </form>
+            </div>
+            <!-- Import CSV Form -->
+            <div class="form-section">
+                <h3>Import Leads from CSV</h3>
+                <form method="post" action="/?action=import" enctype="multipart/form-data">
+                    <input type="file" name="csv_file" accept=".csv" required>
+                    <button type="submit">Import</button>
+                </form>
+            </div>
+            <!-- Lead List -->
+            <table>
+                <tr>
+                    <th>Name</th>
+                    <th>Industry</th>
+                    <th>Revenue</th>
+                    <th>Score</th>
+                    <th>Actions</th>
+                </tr>
+                {% if leads %}
+                    {% for lead in leads %}
+                    <tr>
+                        <td>{{ lead[1] }}</td>
+                        <td>{{ lead[4] }}</td>
+                        <td>{{ lead[5] | float }}</td>
+                        <td>{{ lead[6] }}/5</td>
+                        <td>
+                            <a href="/?lead_id={{ lead[0] }}">View</a>
+                            <a href="/?action=edit&lead_id={{ lead[0] }}">Edit</a>
+                            <a href="/?action=delete&lead_id={{ lead[0] }}" onclick="return confirm('Delete this lead?')">Delete</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr><td colspan="5">No leads found.</td></tr>
+                {% endif %}
+            </table>
+            {% if total_pages > 1 %}
+            <div class="pagination">
+                {% for p in range(1, total_pages + 1) %}
+                <a href="/?page={{ p }}{% if industry %}&industry={{ industry }}{% endif %}{% if min_revenue %}&min_revenue={{ min_revenue }}{% endif %}{% if search %}&search={{ search }}{% endif %}{% if sort_by %}&sort_by={{ sort_by }}{% endif %}"
+                   {% if p == page %}class="active"{% endif %}>{{ p }}</a>
+                {% endfor %}
+            </div>
+            {% endif %}
+        {% endif %}
+    </main>
+</body>
+  </html>
